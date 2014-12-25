@@ -7,6 +7,8 @@ define(function (require, exports) {
     var $ = require("zepto");
     var xg = yg = zg = 0;
     var running = false;
+    var timer = 0;
+    var timerMarker = 0;
     var cvs = document.getElementById("canvas");
     var ctx = cvs.getContext('2d');
     var img = document.createElement("img");
@@ -85,9 +87,9 @@ define(function (require, exports) {
 
         function deviceMotionHandler(event){
             var accGravity = event.accelerationIncludingGravity;
-            document.getElementById("xg").innerHTML = Math.round(accGravity.x * 100) / 100;
-            document.getElementById("yg").innerHTML = Math.round(accGravity.y * 100) / 100;
-            document.getElementById("zg").innerHTML = Math.round(accGravity.z * 100) / 100;
+//            document.getElementById("xg").innerHTML = Math.round(accGravity.x * 100) / 100;
+//            document.getElementById("yg").innerHTML = Math.round(accGravity.y * 100) / 100;
+//            document.getElementById("zg").innerHTML = Math.round(accGravity.z * 100) / 100;
             
             xg = Math.round(accGravity.x);
             yg = Math.round(accGravity.y);
@@ -107,10 +109,12 @@ define(function (require, exports) {
             ball.init();
             running = true;
             this.value = "stop";
+            startTimer();
         }else{
             ball.stop();
             running = false;
             this.value = "start";
+            stopTimer();
         }
     });
     
@@ -122,5 +126,25 @@ define(function (require, exports) {
             xg = Math.random() * -10;
             yg = Math.random() * 10;
         }, 25);
-    })
+    });
+    
+    function startTimer(){
+        var $time = $("#time");
+        if( start ){
+            timerMarker = window.setInterval(function(){
+                $time.html(timer++ < 9 ? "0" + timer : timer);
+                if(timer > 99){
+                    $("#start").trigger("click");
+                }
+            }, 100);
+        }else{
+            stopTimer();
+        }
+    }
+    
+    function stopTimer(){
+        window.clearInterval(timerMarker);
+        timerMarker = 0;
+        timer = 0;
+    }
 })
