@@ -186,7 +186,7 @@ define(function (require, exports) {
             timerMarker = window.setInterval(function(){
                 $time.html(timer++ < 9 ? "0" + timer : timer);
                 if(timer > 99){
-                    $("#start").trigger("click");
+//                    $("#start").trigger("click");
                 }
             }, 100);
         }else{
