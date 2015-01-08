@@ -5,7 +5,7 @@
  */
 define(function (require, exports) {
     var $ = require("zepto");
-    var xg = yg = zg = 0;
+    var xg = yg = 0;
     var running = false;
     var timer = 0;
     var timerMarker = 0;
@@ -13,6 +13,8 @@ define(function (require, exports) {
     var ctx = cvs.getContext('2d');
     var imageData = null;
     var pixels = null;
+    var gravThreshold = 0.5; //重力感应阀值
+    
     var img = document.createElement("img");
     img.onload = function(){
         $("#start").removeAttr("disabled");
@@ -39,68 +41,66 @@ define(function (require, exports) {
     
             this.createHole();
             ctx.drawImage( img, this.x, this.y );
-            this.timer = window.setInterval(function(){that.move();}, 33);
+            this.timer = window.setInterval(function(){that.move();}, 50);
         },
-        canMove: function( tar ){
-            return pixels[ (tar.y * cvsWidth + tar.x) * 4 ] == 51 ? false : true;
+        canMove: function( fromPos, toPos ){
+            if( fromPos.x == toPos.x ){
+                for( var i = 0; i < 20; i++ ){
+                    var pos = (fromPos.y + i) * cvsWidth + fromPos.x;
+                    if( pixels[ pos * 4 ] == 51 ){
+                        return false;
+                    }
+                }
+            }else if( fromPos.y == toPos.y ){
+                for( var i = 0; i < 20; i++ ){
+                    var pos = fromPos.y * cvsWidth + fromPos.x + i;
+                    if( pixels[ pos * 4 ] == 51 ){
+                        return false;
+                    }
+                }
+            }
+            return true;
         },
         move: function(){
             this.clearMyself();
-//            var pos = cvsWidth * this.y + this.x;
-            var wallPos = {x: 0, y: 0 };
+            var wallPos1 = {x: 0, y: 0 };
+            var wallPos2 = {x: 0, y: 0 };
             
-            if( xg > 0 ){
-                if( yg < 0 ){ // NW
-                    wallPos.x = this.x - 1;
-                    wallPos.y = this.y - 1;
-                    console.log("NW");
-                }else if( yg > 0 ){ //SW
-                    wallPos.x = this.x - 1;
-                    wallPos.y = this.y + 21;
-                    console.log("SW");
-                }else{ // W
-                    wallPos.x = this.x - 1;
-                    wallPos.y = this.y + 10;
-                    console.log("W");
-                }
-            }else if( xg < 0 ){
-                if( yg < 0 ){ // NE
-                    wallPos.x = this.x + 21;
-                    wallPos.y = this.y - 1;
-                    console.log("NE");
-                }else if( yg > 0 ){ // SE
-                    wallPos.x = this.x + 21;
-                    wallPos.y = this.y + 21;
-                    console.log("SE");
-                }else{ // E
-                    wallPos.x = this.x + 21;
-                    wallPos.y = this.y + 10;
-                    console.log("E");
-                }
+            if( xg > 0 ){ // W
+                wallPos1.x = wallPos2.x = this.x - 1;
+                wallPos1.y = this.y;
+                wallPos2.y = this.y + 19;
+            }else if( xg < 0 ){ // E
+                wallPos1.x = wallPos2.x = this.x + 20;
+                wallPos1.y = this.y;
+                wallPos2.y = this.y + 19;
             }else{  // xg == 0
                 if( yg < 0 ){ // N
-                    wallPos.x = this.x + 10;
-                    wallPos.y = this.y - 1;
-                    console.log("N");
+                    wallPos1.x = this.x;
+                    wallPos2.x = this.x + 19;
+                    wallPos1.y = wallPos2.y = this.y - 1;
                 }else if( yg > 0 ){ // S
-                    wallPos.x = this.x + 10;
-                    wallPos.y = this.y + 21;
-                    console.log("S");
+                    wallPos1.x = this.x;
+                    wallPos2.x = this.x + 19;
+                    wallPos1.y = wallPos2.y = this.y + 20;
                 }else{ // C
-                    wallPos.x = this.x + 10;
-                    wallPos.y = this.y + 10;
-                    console.log("C");
+                    wallPos1.x = wallPos2.x = this.x + 10;
+                    wallPos1.y = wallPos2.y = this.y + 10;
                 }
             }
             
-            if( this.canMove( wallPos ) ){
-                this.x += xg * (-1); //x轴重力加速度于x轴相反
-                this.y += yg;
+            if( this.canMove( wallPos1, wallPos2 ) ){
+                Math.abs(xg) > Math.abs(yg) ? this.x += xg * (-1) : this.y += yg;
             }
             
-            this.drawHole();
+            if( this.x > 299 && this.y >299 ){
+                this.drawHole();
+            }
             this.draw();
-            
+            if( this.x > 308 && this.y > 308 ){
+                $("#start").trigger("click");
+                alert("win");
+            }
         },
         clearMyself: function(){
             ctx.fillStyle = "#eeeeee";
@@ -117,8 +117,6 @@ define(function (require, exports) {
             ctx.drawImage( img, this.x, this.y );
         },
         createHole: function(){
-//            this.hole.x = parseInt(Math.random()*(maxX - minX + 1) + minX+10); 
-//            this.hole.y = parseInt(Math.random()*(maxY - minY + 1) + minY+10); 
             this.drawHole();
         },
         drawHole: function(){
@@ -130,14 +128,19 @@ define(function (require, exports) {
         }
     }
     
-    if(window.DeviceMotionEvent) { 
+    if(window.DeviceMotionEvent && window.navigator.userAgent.toLowerCase().indexOf('mobile') != -1) { 
         window.addEventListener('devicemotion', deviceMotionHandler, false);
 
         function deviceMotionHandler(event){
             var accGravity = event.accelerationIncludingGravity;
             
-            xg = accGravity.x > 2 ? 1 : accGravity.x < -2 ? -1 : 0;
-            yg = accGravity.y > 2 ? 1 : accGravity.y < -2 ? -1 : 0;
+            if( Math.abs(accGravity.x) > Math.abs(accGravity.y) ){
+                xg = accGravity.x > gravThreshold ? 1 : accGravity.x < (-1 * gravThreshold) ? -1 : 0;
+                yg = 0;
+            }else{
+                xg = 0;
+                yg = accGravity.y > gravThreshold ? 1 : accGravity.y < (-1 * gravThreshold) ? -1 : 0;
+            }
         }
     }
     
@@ -147,18 +150,16 @@ define(function (require, exports) {
     
     $("#start").on("click", function(){
         if( running == false ){
-//            cvs.width = cvs.width;
-//            cvs.height = cvs.height;
             ball = new Ball();
             ball.init();
             running = true;
             this.value = "stop";
-//            startTimer();
+            startTimer();
         }else{
             ball.stop();
             running = false;
             this.value = "start";
-//            stopTimer();
+            stopTimer();
         }
     });
     
