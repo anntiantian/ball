@@ -14,12 +14,8 @@ define(function (require, exports) {
     var imageData = null;
     var pixels = null;
     var gravThreshold = 0.5; //重力感应阀值
-    
-    var img = document.createElement("img");
-    img.onload = function(){
-        $("#start").removeAttr("disabled");
-    };
-    img.src = "./ball.png";
+    var isIOS = !!navigator.userAgent.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/);
+
     var cvsWidth = cvs.width;
     var ball = null;
     
@@ -65,34 +61,52 @@ define(function (require, exports) {
         },
         move: function(){
             this.clearMyself();
-            var wallPos1 = {x: 0, y: 0 };
-            var wallPos2 = {x: 0, y: 0 };
-            
+            var wallPos1 = {x: this.x + this.r, y: this.y + this.r };
+            var wallPos2 = {x: this.x + this.r, y: this.y + this.r };
+            var direction = null;
             if( xg > 0 ){ // W
-                wallPos1.x = wallPos2.x = this.x - 1;
-                wallPos1.y = this.y;
-                wallPos2.y = this.y + this.l - 1;
+                direction = isIOS ? "E" : "W";
             }else if( xg < 0 ){ // E
-                wallPos1.x = wallPos2.x = this.x + this.l;
-                wallPos1.y = this.y;
-                wallPos2.y = this.y + this.l - 1;
+                direction = isIOS ? "W" : "E";
             }else{  // xg == 0
                 if( yg < 0 ){ // N
+                    direction = isIOS ? "S" : "N";
+                }else if( yg > 0 ){ // S
+                    direction = isIOS ? "N" : "S";
+                }                
+            }
+            switch (direction){
+                case "W":
+                    wallPos1.x = wallPos2.x = this.x - 1;
+                    wallPos1.y = this.y;
+                    wallPos2.y = this.y + this.l - 1;
+//                    $("#time").html("W");
+                    break;
+                case "E":
+                    wallPos1.x = wallPos2.x = this.x + this.l;
+                    wallPos1.y = this.y;
+                    wallPos2.y = this.y + this.l - 1;
+//                    $("#time").html("E");
+                    break;
+                case "N":
                     wallPos1.x = this.x;
                     wallPos2.x = this.x + this.l - 1;
                     wallPos1.y = wallPos2.y = this.y - 1;
-                }else if( yg > 0 ){ // S
+//                    $("#time").html("N");
+                    break;
+                case "S":
                     wallPos1.x = this.x;
                     wallPos2.x = this.x + this.l - 1;
                     wallPos1.y = wallPos2.y = this.y + this.l;
-                }else{ // C
-                    wallPos1.x = wallPos2.x = this.x + this.r;
-                    wallPos1.y = wallPos2.y = this.y + this.r;
-                }
+//                    $("#time").html("S");
+                    break;
             }
-            
             if( this.canMove( wallPos1, wallPos2 ) ){
-                Math.abs(xg) > Math.abs(yg) ? this.x += xg * (-1) : this.y += yg;
+                if(Math.abs(xg) > Math.abs(yg)){
+                    isIOS ? this.x -= xg * (-1) : this.x += xg * (-1);
+                }else{
+                    isIOS ? this.y -= yg  : this.y += yg;
+                }
             }
             
             if( this.x > 299 && this.y >299 ){
@@ -139,14 +153,15 @@ define(function (require, exports) {
 
         function deviceMotionHandler(event){
             var accGravity = event.accelerationIncludingGravity;
-            
             if( Math.abs(accGravity.x) > Math.abs(accGravity.y) ){
                 xg = accGravity.x > gravThreshold ? 1 : accGravity.x < (-1 * gravThreshold) ? -1 : 0;
                 yg = 0;
             }else{
                 xg = 0;
                 yg = accGravity.y > gravThreshold ? 1 : accGravity.y < (-1 * gravThreshold) ? -1 : 0;
+
             }
+            
         }
     }
     
@@ -177,15 +192,19 @@ define(function (require, exports) {
         switch(e.keyCode){
             case 38://上
                 yg = -1;
+                xg = 0;
                 break;
             case 40://下
                 yg = 1;
+                xg = 0;
                 break;
             case 37://左
                 xg = 1;
+                yg = 0;
                 break;
             case 39://右
                 xg = -1;
+                yg = 0;
                 break;
         }
     });
