@@ -133,13 +133,13 @@ function renderMaze(context, maze) {
                 continue;
             }
 
-            if (node == maze.startNode) {
-                context.fillText("S", cx + cellSize * 1 / 3, cy + cellSize - 2);
-            } else if (node == maze.endNode) {
-                context.fillText("E", cx + cellSize * 1 / 3, cy + cellSize - 2);
-            } else {
-
-            }
+//            if (node == maze.startNode) {
+//                context.fillText("S", cx + cellSize * 1 / 3, cy + cellSize - 2);
+//            } else if (node == maze.endNode) {
+//                context.fillText("E", cx + cellSize * 1 / 3, cy + cellSize - 2);
+//            } else {
+//
+//            }
             var left = (node.value & Maze.Direction.W) !== Maze.Direction.W;
             var top = (node.value & Maze.Direction.N) !== Maze.Direction.N;
             if (left && top) {

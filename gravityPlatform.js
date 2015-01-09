@@ -10,7 +10,7 @@ define(function (require, exports) {
     var timer = 0;
     var timerMarker = 0;
     var cvs = document.getElementById("canvas");
-    var ctx = cvs.getContext('2d');
+    var cxt = cvs.getContext('2d');
     var imageData = null;
     var pixels = null;
     var gravThreshold = 0.5; //重力感应阀值
@@ -24,7 +24,8 @@ define(function (require, exports) {
     var ball = null;
     
     function Ball(){
-        this.w = 10; // weight
+        this.l = 18; // 直径 
+        this.r = this.l / 2; // 半径
         this.x = 12;  // location x
         this.y = 12;  // location y
         this.vx = 0;  // velocity x
@@ -36,23 +37,24 @@ define(function (require, exports) {
     Ball.prototype = { 
         init: function(){
             var that = this;
-            imageData = ctx.getImageData(0, 0, cvs.width, cvs.height);
+            imageData = cxt.getImageData(0, 0, cvs.width, cvs.height);
             pixels = imageData.data;
     
             this.createHole();
-            ctx.drawImage( img, this.x, this.y );
+            
+            this.draw();
             this.timer = window.setInterval(function(){that.move();}, 50);
         },
         canMove: function( fromPos, toPos ){
             if( fromPos.x == toPos.x ){
-                for( var i = 0; i < 20; i++ ){
+                for( var i = 0; i < this.l; i++ ){
                     var pos = (fromPos.y + i) * cvsWidth + fromPos.x;
                     if( pixels[ pos * 4 ] == 51 ){
                         return false;
                     }
                 }
             }else if( fromPos.y == toPos.y ){
-                for( var i = 0; i < 20; i++ ){
+                for( var i = 0; i < this.l; i++ ){
                     var pos = fromPos.y * cvsWidth + fromPos.x + i;
                     if( pixels[ pos * 4 ] == 51 ){
                         return false;
@@ -69,23 +71,23 @@ define(function (require, exports) {
             if( xg > 0 ){ // W
                 wallPos1.x = wallPos2.x = this.x - 1;
                 wallPos1.y = this.y;
-                wallPos2.y = this.y + 19;
+                wallPos2.y = this.y + this.l - 1;
             }else if( xg < 0 ){ // E
-                wallPos1.x = wallPos2.x = this.x + 20;
+                wallPos1.x = wallPos2.x = this.x + this.l;
                 wallPos1.y = this.y;
-                wallPos2.y = this.y + 19;
+                wallPos2.y = this.y + this.l - 1;
             }else{  // xg == 0
                 if( yg < 0 ){ // N
                     wallPos1.x = this.x;
-                    wallPos2.x = this.x + 19;
+                    wallPos2.x = this.x + this.l - 1;
                     wallPos1.y = wallPos2.y = this.y - 1;
                 }else if( yg > 0 ){ // S
                     wallPos1.x = this.x;
-                    wallPos2.x = this.x + 19;
-                    wallPos1.y = wallPos2.y = this.y + 20;
+                    wallPos2.x = this.x + this.l - 1;
+                    wallPos1.y = wallPos2.y = this.y + this.l;
                 }else{ // C
-                    wallPos1.x = wallPos2.x = this.x + 10;
-                    wallPos1.y = wallPos2.y = this.y + 10;
+                    wallPos1.x = wallPos2.x = this.x + this.r;
+                    wallPos1.y = wallPos2.y = this.y + this.r;
                 }
             }
             
@@ -97,34 +99,38 @@ define(function (require, exports) {
                 this.drawHole();
             }
             this.draw();
-            if( this.x > 308 && this.y > 308 ){
+            if( this.x > 318 && this.y > 318 ){
                 $("#start").trigger("click");
                 alert("win");
             }
         },
         clearMyself: function(){
-            ctx.fillStyle = "#eeeeee";
-//            ctx.beginPath();
-//            ctx.arc(this.x + 10, this.y + 10, 10, 0, Math.PI * 2);
-//            ctx.closePath();
-//            ctx.fill();
-            ctx.fillRect(this.x, this.y, 20, 20);
+            cxt.fillStyle = "#eeeeee";
+            cxt.fillRect(this.x, this.y, this.l, this.l);
         },
         stop: function(){
             window.clearInterval( this.timer );
         },
         draw: function(){
-            ctx.drawImage( img, this.x, this.y );
+            var grd = cxt.createRadialGradient(this.x + this.r/2, this.y + this.r/2, 0, this.x + this.r, this.y + this.r, this.r);
+            grd.addColorStop(0.1, 'rgb(187,187,187)');  
+            grd.addColorStop(1, 'rgb(0,0,0)');
+
+            cxt.fillStyle = grd;
+            cxt.beginPath();
+            cxt.arc(this.x + this.r, this.y + this.r, this.r, 0, Math.PI * 2, true);
+            cxt.closePath();
+            cxt.fill();
         },
         createHole: function(){
             this.drawHole();
         },
         drawHole: function(){
-            ctx.fillStyle="#FF0000";
-            ctx.beginPath();
-            ctx.arc(this.hole.x,this.hole.y,10,0,Math.PI*2,true);
-            ctx.closePath();
-            ctx.fill();
+            cxt.fillStyle="#FF0000";
+            cxt.beginPath();
+            cxt.arc(this.hole.x,this.hole.y,10,0,Math.PI*2,true);
+            cxt.closePath();
+            cxt.fill();
         }
     }
     
@@ -150,8 +156,12 @@ define(function (require, exports) {
     
     $("#start").on("click", function(){
         if( running == false ){
-            ball = new Ball();
-            ball.init();
+            if( !ball ){
+                ball = new Ball();
+                ball.init();
+            }else{
+                ball.move();
+            }
             running = true;
             this.value = "stop";
             startTimer();
@@ -185,9 +195,6 @@ define(function (require, exports) {
         if( start ){
             timerMarker = window.setInterval(function(){
                 $time.html(timer++ < 9 ? "0" + timer : timer);
-                if(timer > 99){
-//                    $("#start").trigger("click");
-                }
             }, 100);
         }else{
             stopTimer();
