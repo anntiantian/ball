@@ -5,7 +5,8 @@
  */
 define(function (require, exports) {
     var $ = require("zepto");
-    var xg = yg = 0;
+    var xg = 0;
+    var yg = 0;
     var running = false;
     var timer = 0;
     var timerMarker = 0;
@@ -15,6 +16,7 @@ define(function (require, exports) {
     var pixels = null;
     var gravThreshold = 0.5; //重力感应阀值
     var isIOS = !!navigator.userAgent.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/);
+    var isMobile = window.navigator.userAgent.toLowerCase().indexOf('mobile') != -1 ? true : false;
 
     var cvsWidth = cvs.width;
     var ball = null;
@@ -41,73 +43,133 @@ define(function (require, exports) {
             this.draw();
             this.timer = window.setInterval(function(){that.move();}, 50);
         },
-        canMove: function( fromPos, toPos ){
-            if( fromPos.x == toPos.x ){
-                for( var i = 0; i < this.l; i++ ){
-                    var pos = (fromPos.y + i) * cvsWidth + fromPos.x;
-                    if( pixels[ pos * 4 ] == 51 ){
-                        return false;
-                    }
-                }
-            }else if( fromPos.y == toPos.y ){
-                for( var i = 0; i < this.l; i++ ){
-                    var pos = fromPos.y * cvsWidth + fromPos.x + i;
+        canMove: function( p1, p2 ){
+            for( var j = p1.y; j < p2.y; j++ ){
+                for( var i = p1.x; i < p2.x; i++ ){
+                    var pos = j * cvsWidth + i;
                     if( pixels[ pos * 4 ] == 51 ){
                         return false;
                     }
                 }
             }
+            // debug
+//            pixels[(p1.y * cvsWidth + p1.x)*4] = 255; // Red
+//            pixels[(p1.y * cvsWidth + p1.x)*4 + 1] = 0; // Red
+//            pixels[(p1.y * cvsWidth + p1.x)*4 + 2] = 0; // Red
+//            pixels[(p2.y * cvsWidth + p2.x)*4] = 0; // Blue
+//            pixels[(p2.y * cvsWidth + p2.x)*4 + 1] = 0; // Blue
+//            pixels[(p2.y * cvsWidth + p2.x)*4 + 2] = 255; // Blue
+//            cxt.putImageData(imageData, 0, 0);
             return true;
         },
         move: function(){
-            this.clearMyself();
-            var wallPos1 = {x: this.x + this.r, y: this.y + this.r };
-            var wallPos2 = {x: this.x + this.r, y: this.y + this.r };
+            
+            var wallPos1 = {x: this.x, y: this.y };
+            var wallPos2 = {x: this.x, y: this.y };
             var direction = null;
             if( xg > 0 ){ // W
-                direction = isIOS ? "E" : "W";
+                direction = "W";
             }else if( xg < 0 ){ // E
-                direction = isIOS ? "W" : "E";
+                direction = "E";
             }else{  // xg == 0
                 if( yg < 0 ){ // N
-                    direction = isIOS ? "S" : "N";
+                    direction = "N";
                 }else if( yg > 0 ){ // S
-                    direction = isIOS ? "N" : "S";
+                    direction = "S";
                 }                
             }
             switch (direction){
                 case "W":
-                    wallPos1.x = wallPos2.x = this.x - 1;
+                    wallPos1.x = this.x - xg - 1;// - xg 
                     wallPos1.y = this.y;
-                    wallPos2.y = this.y + this.l - 1;
-//                    $("#time").html("W");
+                                        
+                    wallPos2.x = this.x - 1;
+                    wallPos2.y = this.y + this.l;
+                    for( var j = wallPos1.y; j < wallPos2.y; j++ ){
+                        for( var i = wallPos2.x; i > wallPos1.x; i-- ){
+                            var pos = j * cvsWidth + i;
+                            if( pixels[ pos * 4 ] == 51 ){
+                                xg = (i - this.x + 1) * -1;
+                                flag = 1;
+                                break;
+                            }
+                        }
+                        if( flag === 1 ){
+                            break;
+                        }
+                    }
+                    $("#time").html("W");
                     break;
                 case "E":
-                    wallPos1.x = wallPos2.x = this.x + this.l;
+                    wallPos1.x = this.x + this.l - 1;
                     wallPos1.y = this.y;
-                    wallPos2.y = this.y + this.l - 1;
-//                    $("#time").html("E");
+                    
+                    wallPos2.x = this.x + this.l - xg;
+                    wallPos2.y = this.y + this.l;
+                    
+                    for( var j = wallPos1.y; j < wallPos2.y; j++ ){
+                        for( var i = wallPos1.x; i < wallPos2.x; i++ ){
+                            var pos = j * cvsWidth + i;
+                            if( pixels[ pos * 4 ] == 51 ){
+                                xg = (i - this.x - this.l) *-1;
+                                flag = 1;
+                                break;
+                            }
+                        }
+                        if( flag === 1 ){
+                            break;
+                        }
+                    }
+                    $("#time").html("E");
                     break;
                 case "N":
                     wallPos1.x = this.x;
-                    wallPos2.x = this.x + this.l - 1;
-                    wallPos1.y = wallPos2.y = this.y - 1;
-//                    $("#time").html("N");
+                    wallPos1.y = this.y - 1 + yg;
+                    
+                    wallPos2.x = this.x + this.l;
+                    wallPos2.y = this.y - 1;
+                    
+                    for( var j = wallPos2.y; j > wallPos1.y; j-- ){
+                        for( var i = wallPos1.x; i < wallPos2.x; i++ ){
+                            var pos = j * cvsWidth + i;
+                            if( pixels[ pos * 4 ] == 51 ){
+                                yg = (j - this.y + 1);
+                                flag = 1;
+                                break;
+                            }
+                        }
+                        if( flag === 1 ){
+                            break;
+                        }
+                    }
+                    $("#time").html("N");
                     break;
                 case "S":
                     wallPos1.x = this.x;
-                    wallPos2.x = this.x + this.l - 1;
-                    wallPos1.y = wallPos2.y = this.y + this.l;
-//                    $("#time").html("S");
+                    wallPos1.y = this.y + this.l;
+                    
+                    wallPos2.x = this.x + this.l;
+                    wallPos2.y = this.y + this.l + yg;
+                    
+                    for( var j = wallPos1.y; j < wallPos2.y; j++ ){
+                        for( var i = wallPos1.x; i < wallPos2.x; i++ ){
+                            var pos = j * cvsWidth + i;
+                            if( pixels[ pos * 4 ] == 51 ){
+                                yg = (j - this.y - this.l);
+                                flag = 1;
+                                break;
+                            }
+                        }
+                        if( flag === 1 ){
+                            break;
+                        }
+                    }
+                    $("#time").html("S");
                     break;
             }
-            if( this.canMove( wallPos1, wallPos2 ) ){
-                if(Math.abs(xg) > Math.abs(yg)){
-                    isIOS ? this.x -= xg * (-1) : this.x += xg * (-1);
-                }else{
-                    isIOS ? this.y -= yg  : this.y += yg;
-                }
-            }
+            this.clearMyself();
+                
+            Math.abs(xg) > Math.abs(yg) ? this.x += xg * (-1) : this.y += yg;
             
             if( this.x > 299 && this.y >299 ){
                 this.drawHole();
@@ -116,6 +178,8 @@ define(function (require, exports) {
             if( this.x > 318 && this.y > 318 ){
                 $("#start").trigger("click");
                 alert("win");
+                ball = null;
+                xg = yg = 0;
             }
         },
         clearMyself: function(){
@@ -148,18 +212,19 @@ define(function (require, exports) {
         }
     }
     
-    if(window.DeviceMotionEvent && window.navigator.userAgent.toLowerCase().indexOf('mobile') != -1) { 
+    if( isMobile && window.DeviceMotionEvent ) { 
         window.addEventListener('devicemotion', deviceMotionHandler, false);
 
         function deviceMotionHandler(event){
             var accGravity = event.accelerationIncludingGravity;
             if( Math.abs(accGravity.x) > Math.abs(accGravity.y) ){
-                xg = accGravity.x > gravThreshold ? 1 : accGravity.x < (-1 * gravThreshold) ? -1 : 0;
+                xg = Math.round( accGravity.x );
+                isIOS && (xg *= -1);
                 yg = 0;
             }else{
                 xg = 0;
-                yg = accGravity.y > gravThreshold ? 1 : accGravity.y < (-1 * gravThreshold) ? -1 : 0;
-
+                yg = Math.round( accGravity.y );
+                isIOS && (yg *= -1);
             }
             
         }
@@ -191,19 +256,23 @@ define(function (require, exports) {
     $(document).on("keydown", function(e){
         switch(e.keyCode){
             case 38://上
-                yg = -1;
+                yg--;
+//                yg = -1;
                 xg = 0;
                 break;
             case 40://下
-                yg = 1;
+                yg++;
+//                yg = 1;
                 xg = 0;
                 break;
             case 37://左
-                xg = 1;
+                xg++;
+//                xg = 1;
                 yg = 0;
                 break;
             case 39://右
-                xg = -1;
+                xg--;
+//                xg = -1;
                 yg = 0;
                 break;
         }
@@ -212,9 +281,9 @@ define(function (require, exports) {
     function startTimer(){
         var $time = $("#time");
         if( start ){
-            timerMarker = window.setInterval(function(){
-                $time.html(timer++ < 9 ? "0" + timer : timer);
-            }, 100);
+//            timerMarker = window.setInterval(function(){
+//                $time.html(timer++ < 9 ? "0" + timer : timer);
+//            }, 100);
         }else{
             stopTimer();
         }
