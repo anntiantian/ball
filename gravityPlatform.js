@@ -16,7 +16,6 @@ define(function (require, exports) {
     var pixels = null;
     var isIOS = !!navigator.userAgent.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/);
     var isMobile = window.navigator.userAgent.toLowerCase().indexOf('mobile') != -1 ? true : false;
-    alert(3)
     var cvsWidth = cvs.width;
     var ball = null;
     
