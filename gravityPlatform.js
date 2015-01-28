@@ -14,10 +14,9 @@ define(function (require, exports) {
     var cxt = cvs.getContext('2d');
     var imageData = null;
     var pixels = null;
-    var gravThreshold = 0.5; //重力感应阀值
     var isIOS = !!navigator.userAgent.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/);
     var isMobile = window.navigator.userAgent.toLowerCase().indexOf('mobile') != -1 ? true : false;
-
+    alert(3)
     var cvsWidth = cvs.width;
     var ball = null;
     
@@ -78,6 +77,7 @@ define(function (require, exports) {
                     direction = "S";
                 }                
             }
+            var flag = 0;
             switch (direction){
                 case "W":
                     wallPos1.x = this.x - xg - 1;// - xg 
@@ -98,7 +98,7 @@ define(function (require, exports) {
                             break;
                         }
                     }
-//                    $("#time").html(xg);
+//                    $("#time").html("W");
                     break;
                 case "E":
                     wallPos1.x = this.x + this.l - 1;
@@ -120,7 +120,7 @@ define(function (require, exports) {
                             break;
                         }
                     }
-//                    $("#time").html(xg);
+//                    $("#time").html("E");
                     break;
                 case "N":
                     wallPos1.x = this.x;
@@ -142,7 +142,7 @@ define(function (require, exports) {
                             break;
                         }
                     }
-//                    $("#time").html(yg);
+//                    $("#time").html("N");
                     break;
                 case "S":
                     wallPos1.x = this.x;
@@ -164,12 +164,15 @@ define(function (require, exports) {
                             break;
                         }
                     }
-//                    $("#time").html(yg);
+//                    $("#time").html("S");
                     break;
             }
             this.clearMyself();
-                
-            Math.abs(xg) > Math.abs(yg) ? this.x += xg * (-1) : this.y += yg;
+            if(Math.abs(xg) > Math.abs(yg)){
+                this.x += xg * (-1);
+            }else{
+                this.y += yg;
+            }
             
             if( this.x > 299 && this.y >299 ){
                 this.drawHole();
@@ -179,7 +182,6 @@ define(function (require, exports) {
                 $("#start").trigger("click");
                 alert("win");
                 ball = null;
-                xg = yg = 0;
             }
         },
         clearMyself: function(){
@@ -218,13 +220,11 @@ define(function (require, exports) {
         function deviceMotionHandler(event){
             var accGravity = event.accelerationIncludingGravity;
             if( Math.abs(accGravity.x) > Math.abs(accGravity.y) ){
-                xg = Math.round( accGravity.x );
-                isIOS && (xg *= -1);
+                isIOS ? xg = Math.round( accGravity.x ) * -1 : xg = Math.round( accGravity.x );
                 yg = 0;
             }else{
                 xg = 0;
-                yg = Math.round( accGravity.y );
-                isIOS && (yg *= -1);
+                isIOS ? yg = Math.round( accGravity.y ) * -1 : yg = Math.round( accGravity.y );
             }
             
         }
