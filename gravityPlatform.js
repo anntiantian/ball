@@ -98,7 +98,7 @@ define(function (require, exports) {
                             break;
                         }
                     }
-                    $("#time").html("W");
+//                    $("#time").html(xg);
                     break;
                 case "E":
                     wallPos1.x = this.x + this.l - 1;
@@ -120,7 +120,7 @@ define(function (require, exports) {
                             break;
                         }
                     }
-                    $("#time").html("E");
+//                    $("#time").html(xg);
                     break;
                 case "N":
                     wallPos1.x = this.x;
@@ -142,7 +142,7 @@ define(function (require, exports) {
                             break;
                         }
                     }
-                    $("#time").html("N");
+//                    $("#time").html(yg);
                     break;
                 case "S":
                     wallPos1.x = this.x;
@@ -164,7 +164,7 @@ define(function (require, exports) {
                             break;
                         }
                     }
-                    $("#time").html("S");
+//                    $("#time").html(yg);
                     break;
             }
             this.clearMyself();
@@ -257,22 +257,18 @@ define(function (require, exports) {
         switch(e.keyCode){
             case 38://上
                 yg--;
-//                yg = -1;
                 xg = 0;
                 break;
             case 40://下
                 yg++;
-//                yg = 1;
                 xg = 0;
                 break;
             case 37://左
                 xg++;
-//                xg = 1;
                 yg = 0;
                 break;
             case 39://右
                 xg--;
-//                xg = -1;
                 yg = 0;
                 break;
         }
@@ -281,9 +277,9 @@ define(function (require, exports) {
     function startTimer(){
         var $time = $("#time");
         if( start ){
-//            timerMarker = window.setInterval(function(){
-//                $time.html(timer++ < 9 ? "0" + timer : timer);
-//            }, 100);
+            timerMarker = window.setInterval(function(){
+                $time.html(timer++ < 9 ? "0" + timer : timer);
+            }, 100);
         }else{
             stopTimer();
         }
