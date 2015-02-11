@@ -10,7 +10,7 @@ define(function (require, exports) {
     var running = false;
     var timer = 0;
     var timerMarker = 0;
-    var cvs = document.getElementById("canvas");
+    var cvs = document.getElementById("canvasBall");
     var cxt = cvs.getContext('2d');
     var imageData = null;
     var pixels = null;
@@ -33,11 +33,11 @@ define(function (require, exports) {
     Ball.prototype = { 
         init: function(){
             var that = this;
-            imageData = cxt.getImageData(0, 0, cvs.width, cvs.height);
+            var context = document.getElementById("canvas").getContext("2d");
+            imageData = context.getImageData(0, 0, cvs.width, cvs.height);
             pixels = imageData.data;
     
-            this.createHole();
-            
+            this.createHole(context);
             this.draw();
             this.timer = window.setInterval(function(){that.move();}, 50);
         },
@@ -100,7 +100,7 @@ define(function (require, exports) {
 //                    $("#time").html("W");
                     break;
                 case "E":
-                    wallPos1.x = this.x + this.l - 1;
+                    wallPos1.x = this.x + this.l;
                     wallPos1.y = this.y;
                     
                     wallPos2.x = this.x + this.l - xg;
@@ -173,9 +173,6 @@ define(function (require, exports) {
                 this.y += yg;
             }
             
-            if( this.x > 299 && this.y >299 ){
-                this.drawHole();
-            }
             this.draw();
             if( this.x > 318 && this.y > 318 ){
                 $("#start").trigger("click");
@@ -184,8 +181,8 @@ define(function (require, exports) {
             }
         },
         clearMyself: function(){
-            cxt.fillStyle = "#eeeeee";
-            cxt.fillRect(this.x, this.y, this.l, this.l);
+            cvs.width = cvs.width;
+            cvs.height = cvs.height;
         },
         stop: function(){
             window.clearInterval( this.timer );
@@ -201,15 +198,12 @@ define(function (require, exports) {
             cxt.closePath();
             cxt.fill();
         },
-        createHole: function(){
-            this.drawHole();
-        },
-        drawHole: function(){
-            cxt.fillStyle="#FF0000";
-            cxt.beginPath();
-            cxt.arc(this.hole.x,this.hole.y,10,0,Math.PI*2,true);
-            cxt.closePath();
-            cxt.fill();
+        createHole: function(context){
+            context.fillStyle="#FF0000";
+            context.beginPath();
+            context.arc(this.hole.x,this.hole.y,10,0,Math.PI*2,true);
+            context.closePath();
+            context.fill();
         }
     }
     
